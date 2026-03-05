@@ -1,0 +1,1530 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Epidemiologist PySpark Handbook</title>
+    <link href="https://fonts.googleapis.com/css2?family=Crimson+Pro:wght@400;600;700&family=IBM+Plex+Mono:wght@400;500&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #1a4d2e;
+            --primary-light: #2d6a4f;
+            --accent: #f77f00;
+            --accent-light: #fcbf49;
+            --bg: #fdfcf8;
+            --text: #1a1a1a;
+            --text-muted: #666;
+            --border: #e0ddd4;
+            --code-bg: #f5f3ed;
+            --sidebar-bg: #ffffff;
+            --shadow: rgba(0, 0, 0, 0.08);
+        }
+
+        body {
+            font-family: 'DM Sans', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.7;
+            overflow-x: hidden;
+        }
+
+        /* Header */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 3rem 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -10%;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            border-radius: 50%;
+            animation: float 20s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(0, 0) rotate(0deg); }
+            33% { transform: translate(30px, -30px) rotate(120deg); }
+            66% { transform: translate(-20px, 20px) rotate(240deg); }
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header h1 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            animation: slideDown 0.8s ease-out;
+        }
+
+        .header .subtitle {
+            font-size: 1.3rem;
+            opacity: 0.95;
+            font-weight: 400;
+            animation: slideDown 0.8s ease-out 0.2s both;
+        }
+
+        .header .version {
+            display: inline-block;
+            background: rgba(255,255,255,0.2);
+            padding: 0.3rem 0.8rem;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            margin-top: 1rem;
+            animation: slideDown 0.8s ease-out 0.4s both;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* Main Layout */
+        .container {
+            display: flex;
+            max-width: 1400px;
+            margin: 0 auto;
+            min-height: calc(100vh - 200px);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 300px;
+            background: var(--sidebar-bg);
+            padding: 2rem 1.5rem;
+            border-right: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            height: 100vh;
+            overflow-y: auto;
+            animation: slideRight 0.6s ease-out;
+        }
+
+        @keyframes slideRight {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .sidebar h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.1rem;
+            color: var(--primary);
+            margin: 1.5rem 0 0.8rem 0;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+
+        .sidebar h3:first-child {
+            margin-top: 0;
+        }
+
+        .sidebar ul {
+            list-style: none;
+        }
+
+        .sidebar li {
+            margin: 0.3rem 0;
+        }
+
+        .sidebar a {
+            color: var(--text);
+            text-decoration: none;
+            display: block;
+            padding: 0.5rem 0.8rem;
+            border-radius: 6px;
+            transition: all 0.2s ease;
+            font-size: 0.95rem;
+        }
+
+        .sidebar a:hover {
+            background: var(--code-bg);
+            color: var(--primary);
+            transform: translateX(4px);
+        }
+
+        .sidebar a.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 3rem;
+            animation: fadeIn 0.8s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .content-wrapper {
+            max-width: 900px;
+        }
+
+        h2 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 2.5rem;
+            color: var(--primary);
+            margin-bottom: 1.5rem;
+            font-weight: 700;
+        }
+
+        h3 {
+            font-family: 'Crimson Pro', serif;
+            font-size: 1.8rem;
+            color: var(--primary-light);
+            margin: 2rem 0 1rem 0;
+            font-weight: 600;
+        }
+
+        h4 {
+            font-size: 1.3rem;
+            color: var(--text);
+            margin: 1.5rem 0 0.8rem 0;
+            font-weight: 600;
+        }
+
+        p {
+            margin-bottom: 1.2rem;
+            color: var(--text);
+        }
+
+        /* Alert Boxes */
+        .alert {
+            padding: 1.2rem 1.5rem;
+            border-radius: 8px;
+            margin: 1.5rem 0;
+            border-left: 4px solid;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .alert::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .alert-info {
+            background: #e3f2fd;
+            border-left-color: #1976d2;
+            color: #0d47a1;
+        }
+
+        .alert-warning {
+            background: #fff3e0;
+            border-left-color: var(--accent);
+            color: #e65100;
+        }
+
+        .alert-tip {
+            background: #f1f8f4;
+            border-left-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .alert strong {
+            display: block;
+            margin-bottom: 0.3rem;
+            font-weight: 600;
+        }
+
+        /* Code Blocks */
+        pre {
+            background: var(--code-bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 1.5rem;
+            padding-top: 4rem;
+            overflow-x: auto;
+            margin: 1.5rem 0;
+            position: relative;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .code-header {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            padding: 0.75rem 1rem;
+            border-bottom: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.7);
+            border-radius: 8px 8px 0 0;
+            height: 3rem;
+        }
+
+        .code-language {
+            display: none;
+        }
+
+        .copy-button {
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.4rem 0.8rem;
+            background: white;
+            border: 1px solid var(--border);
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-family: 'DM Sans', sans-serif;
+            color: var(--text);
+            transition: all 0.2s ease;
+        }
+
+        .copy-button:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .copy-button.copied {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .copy-icon {
+            width: 14px;
+            height: 14px;
+        }
+
+        code {
+            display: block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        code {
+            display: block;
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text);
+        }
+
+        p code, li code {
+            display: inline;
+            background: var(--code-bg);
+            padding: 0.2rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.88rem;
+            color: var(--primary);
+            border: 1px solid var(--border);
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 1.5rem 0;
+            background: white;
+            box-shadow: 0 2px 8px var(--shadow);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+
+        th {
+            background: var(--primary);
+            color: white;
+            padding: 1rem;
+            text-align: left;
+            font-weight: 600;
+        }
+
+        td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border);
+        }
+
+        tr:last-child td {
+            border-bottom: none;
+        }
+
+        tr:hover {
+            background: var(--code-bg);
+        }
+
+        /* Lists */
+        ul, ol {
+            margin: 1rem 0 1.5rem 1.5rem;
+        }
+
+        li {
+            margin: 0.5rem 0;
+        }
+
+        /* Navigation Buttons */
+        .nav-buttons {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 3rem;
+            padding-top: 2rem;
+            border-top: 2px solid var(--border);
+        }
+
+        .nav-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.8rem 1.5rem;
+            background: var(--primary);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px var(--shadow);
+        }
+
+        .nav-button:hover {
+            background: var(--primary-light);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px var(--shadow);
+        }
+
+        .nav-button.next {
+            margin-left: auto;
+        }
+
+        /* Footer */
+        .footer {
+            background: var(--primary);
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 4rem;
+        }
+
+        .footer a {
+            color: var(--accent-light);
+            text-decoration: none;
+        }
+
+        .footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 968px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+                border-right: none;
+                border-bottom: 1px solid var(--border);
+            }
+
+            .main-content {
+                padding: 2rem 1.5rem;
+            }
+
+            .header h1 {
+                font-size: 2.5rem;
+            }
+
+            h2 {
+                font-size: 2rem;
+            }
+        }
+
+        /* Intro Cards */
+        .intro-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            box-shadow: 0 2px 8px var(--shadow);
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 16px var(--shadow);
+        }
+
+        .card h4 {
+            color: var(--primary);
+            margin-top: 0;
+            font-family: 'Crimson Pro', serif;
+        }
+
+        .card-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="header-content">
+            <h1>The Epidemiologist PySpark Handbook</h1>
+            <p class="subtitle">A practical guide to large-scale epidemiological data analysis using Apache Spark</p>
+            <span class="version">Version 1.0 | 2026</span>
+        </div>
+    </div>
+
+    <div class="container">
+        <nav class="sidebar">
+            <h3>Getting Started</h3>
+            <ul>
+                <li><a href="#introduction" class="active">Introduction</a></li>
+                <li><a href="#setup">Environment Setup</a></li>
+                <li><a href="#basics">PySpark Basics</a></li>
+                <li><a href="#transition">Transitioning from R</a></li>
+            </ul>
+
+            <h3>Data Management</h3>
+            <ul>
+                <li><a href="#importing">Importing Data</a></li>
+                <li><a href="#cleaning">Data Cleaning</a></li>
+                <li><a href="#transforming">Transformations</a></li>
+                <li><a href="#joining">Joining Datasets</a></li>
+            </ul>
+
+            <h3>Epidemiological Analysis</h3>
+            <ul>
+                <li><a href="#descriptive">Descriptive Statistics</a></li>
+                <li><a href="#stratification">Stratification & Grouping</a></li>
+                <li><a href="#rates">Rates & Ratios</a></li>
+                <li><a href="#survival">Survival Analysis</a></li>
+                <li><a href="#regression">Regression Models</a></li>
+            </ul>
+
+            <h3>Advanced Topics</h3>
+            <ul>
+                <li><a href="#ml">Machine Learning</a></li>
+                <li><a href="#optimization">Performance Optimization</a></li>
+                <li><a href="#distributed">Distributed Computing</a></li>
+                <li><a href="#visualization">Visualization</a></li>
+            </ul>
+
+            <h3>Case Studies</h3>
+            <ul>
+                <li><a href="#outbreak">Outbreak Investigation</a></li>
+                <li><a href="#surveillance">Disease Surveillance</a></li>
+                <li><a href="#cohort">Cohort Analysis</a></li>
+            </ul>
+        </nav>
+
+        <main class="main-content">
+            <div class="content-wrapper">
+                <section id="introduction">
+                    <h2>Introduction</h2>
+                    <p>Welcome to <strong>The Epidemiologist PySpark Handbook</strong>, a comprehensive guide designed specifically for epidemiologists and public health professionals working with large-scale health data.</p>
+
+                    <div class="alert alert-info">
+                        <strong>📊 Why PySpark for Epidemiology?</strong>
+                        Traditional tools like R and Stata excel with datasets under 10GB, but modern epidemiological datasets—EHRs, genomic data, claims databases, and population-level surveillance systems—often exceed terabytes. PySpark enables you to analyze these massive datasets efficiently using distributed computing.
+                    </div>
+
+                    <div class="intro-cards">
+                        <div class="card">
+                            <div class="card-icon">🚀</div>
+                            <h4>Scalability</h4>
+                            <p>Process datasets from gigabytes to petabytes without changing your code</p>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon">🔄</div>
+                            <h4>Familiar Syntax</h4>
+                            <p>SQL-like operations and dataframe syntax similar to pandas and dplyr</p>
+                        </div>
+                        <div class="card">
+                            <div class="card-icon">⚡</div>
+                            <h4>Speed</h4>
+                            <p>In-memory computing delivers 100x faster analytics than traditional disk-based systems</p>
+                        </div>
+                    </div>
+
+                    <h3>Who This Handbook Is For</h3>
+                    <ul>
+                        <li><strong>Epidemiologists</strong> working with large healthcare databases (claims, EHR, registries)</li>
+                        <li><strong>Public health researchers</strong> analyzing population-level surveillance data</li>
+                        <li><strong>Data scientists</strong> in health agencies processing massive datasets</li>
+                        <li><strong>R/Stata users</strong> transitioning to big data platforms</li>
+                    </ul>
+
+                    <h3>Prerequisites</h3>
+                    <p>This handbook assumes you have:</p>
+                    <ul>
+                        <li>Basic programming knowledge (Python preferred, but R experience translates well)</li>
+                        <li>Fundamental epidemiological concepts (study designs, measures of association, confounding)</li>
+                        <li>Familiarity with data manipulation (filtering, grouping, joining)</li>
+                    </ul>
+
+                    <div class="alert alert-tip">
+                        <strong>💡 Learning Approach</strong>
+                        Each chapter includes practical examples using real-world epidemiological scenarios. Code snippets are provided with explanations of both the technical implementation and epidemiological interpretation.
+                    </div>
+                </section>
+
+                <section id="setup">
+                    <h2>Environment Setup</h2>
+                    
+                    <h3>Installation Options</h3>
+                    
+                    <h4>Option 1: Local Installation (Recommended for Learning)</h4>
+                    <pre><code># Install PySpark via pip
+pip install pyspark pandas pyarrow
+
+# Verify installation
+from pyspark.sql import SparkSession
+spark = SparkSession.builder.appName("EpiAnalysis").getOrCreate()
+spark.version</code></pre>
+
+                    <h4>Option 2: Cloud Platforms</h4>
+                    <p>For production work with truly large datasets, consider:</p>
+                    <ul>
+                        <li><strong>Databricks</strong> - Managed Spark with notebooks (recommended for teams)</li>
+                        <li><strong>AWS EMR</strong> - Amazon's managed Hadoop/Spark service</li>
+                        <li><strong>Google Dataproc</strong> - Google Cloud's Spark offering</li>
+                        <li><strong>Azure HDInsight</strong> - Microsoft's big data platform</li>
+                    </ul>
+
+                    <h3>Creating a Spark Session</h3>
+                    <p>Every PySpark application starts with a SparkSession:</p>
+                    <pre><code>from pyspark.sql import SparkSession
+
+# Create Spark session with configuration
+spark = SparkSession.builder \
+    .appName("EpidemiologyAnalysis") \
+    .config("spark.driver.memory", "4g") \
+    .config("spark.executor.memory", "4g") \
+    .getOrCreate()
+
+# Check Spark version and config
+print(f"Spark version: {spark.version}")
+print(f"Master: {spark.sparkContext.master}")</code></pre>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Memory Configuration</strong>
+                        Adjust memory settings based on your dataset size and available RAM. For datasets under 50GB on a laptop, 4-8GB driver memory is usually sufficient.
+                    </div>
+
+                    <h3>Development Environment</h3>
+                    <p>Recommended IDEs for PySpark development:</p>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Tool</th>
+                                <th>Best For</th>
+                                <th>Key Features</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Jupyter Notebook</strong></td>
+                                <td>Interactive analysis</td>
+                                <td>Cell-by-cell execution, inline visualization</td>
+                            </tr>
+                            <tr>
+                                <td><strong>VS Code</strong></td>
+                                <td>Script development</td>
+                                <td>Debugging, version control, extensions</td>
+                            </tr>
+                            <tr>
+                                <td><strong>PyCharm</strong></td>
+                                <td>Production code</td>
+                                <td>Advanced refactoring, profiling</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Databricks</strong></td>
+                                <td>Team collaboration</td>
+                                <td>Cloud-native, version control, scheduling</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </section>
+
+                <section id="basics">
+                    <h2>PySpark Basics</h2>
+
+                    <h3>DataFrames: The Core Abstraction</h3>
+                    <p>PySpark DataFrames are distributed collections of data organized into named columns, similar to tables in SQL or dataframes in R/pandas.</p>
+
+                    <pre><code># Create a DataFrame from data
+from pyspark.sql import Row
+
+data = [
+    Row(patient_id=1, age=45, disease="COVID-19", outcome="Recovered"),
+    Row(patient_id=2, age=67, disease="COVID-19", outcome="Deceased"),
+    Row(patient_id=3, age=34, disease="COVID-19", outcome="Recovered")
+]
+
+df = spark.createDataFrame(data)
+df.show()</code></pre>
+
+                    <h3>Reading Data</h3>
+                    <p>PySpark supports various file formats common in epidemiology:</p>
+
+                    <pre><code># CSV files (most common)
+df = spark.read.csv("surveillance_data.csv", header=True, inferSchema=True)
+
+# Parquet (optimized for big data)
+df = spark.read.parquet("ehr_records.parquet")
+
+# JSON
+df = spark.read.json("api_response.json")
+
+# Database connection
+df = spark.read.jdbc(
+    url="jdbc:postgresql://localhost:5432/health_db",
+    table="patients",
+    properties={"user": "analyst", "password": "secret"}
+)</code></pre>
+
+                    <h3>Basic Operations</h3>
+
+                    <h4>Viewing Data</h4>
+                    <pre><code># Show first 20 rows
+df.show()
+
+# Show specific number of rows
+df.show(5, truncate=False)
+
+# Display schema
+df.printSchema()
+
+# Get column names
+df.columns
+
+# Count rows
+df.count()</code></pre>
+
+                    <h4>Selecting Columns</h4>
+                    <pre><code># Select specific columns
+df.select("patient_id", "age", "disease").show()
+
+# Select and rename
+df.select(
+    col("patient_id").alias("id"),
+    col("age"),
+    col("disease")
+).show()
+
+# Drop columns
+df.drop("unnecessary_col").show()</code></pre>
+
+                    <h4>Filtering Rows</h4>
+                    <pre><code>from pyspark.sql.functions import col
+
+# Simple filter
+df.filter(col("age") > 50).show()
+
+# Multiple conditions
+df.filter(
+    (col("age") > 50) & 
+    (col("disease") == "COVID-19")
+).show()
+
+# Using SQL-like WHERE
+df.where("age > 50 AND disease = 'COVID-19'").show()</code></pre>
+
+                    <div class="alert alert-tip">
+                        <strong>💡 R to PySpark Translation</strong>
+                        <ul>
+                            <li><code>filter()</code> in dplyr = <code>filter()</code> or <code>where()</code> in PySpark</li>
+                            <li><code>select()</code> in dplyr = <code>select()</code> in PySpark</li>
+                            <li><code>mutate()</code> in dplyr = <code>withColumn()</code> in PySpark</li>
+                            <li><code>group_by() %>% summarise()</code> = <code>groupBy().agg()</code></li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section id="transition">
+                    <h2>Transitioning from R</h2>
+
+                    <h3>Key Conceptual Differences</h3>
+
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Concept</th>
+                                <th>R (tidyverse)</th>
+                                <th>PySpark</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>Data Structure</strong></td>
+                                <td>data.frame / tibble</td>
+                                <td>DataFrame (distributed)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Execution</strong></td>
+                                <td>Eager (immediate)</td>
+                                <td>Lazy (builds execution plan)</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Memory</strong></td>
+                                <td>In-memory (single machine)</td>
+                                <td>Distributed across cluster</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Syntax</strong></td>
+                                <td>Pipe operator (%>%)</td>
+                                <td>Method chaining (.)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Common R Operations in PySpark</h3>
+
+                    <h4>Data Manipulation</h4>
+                    <pre><code># R (dplyr)
+# df %>%
+#   filter(age > 50) %>%
+#   select(patient_id, age, disease) %>%
+#   mutate(age_group = case_when(
+#     age < 18 ~ "Child",
+#     age < 65 ~ "Adult",
+#     TRUE ~ "Senior"
+#   ))
+
+# PySpark equivalent
+from pyspark.sql.functions import when
+
+df_transformed = df \
+    .filter(col("age") > 50) \
+    .select("patient_id", "age", "disease") \
+    .withColumn("age_group",
+        when(col("age") < 18, "Child")
+        .when(col("age") < 65, "Adult")
+        .otherwise("Senior")
+    )</code></pre>
+
+                    <h4>Aggregation</h4>
+                    <pre><code># R (dplyr)
+# df %>%
+#   group_by(disease) %>%
+#   summarise(
+#     n = n(),
+#     mean_age = mean(age, na.rm=TRUE),
+#     case_fatality = sum(outcome == "Deceased") / n()
+#   )
+
+# PySpark equivalent
+from pyspark.sql.functions import count, mean, sum, when
+
+df.groupBy("disease") \
+    .agg(
+        count("*").alias("n"),
+        mean("age").alias("mean_age"),
+        (sum(when(col("outcome") == "Deceased", 1).otherwise(0)) / count("*"))
+            .alias("case_fatality")
+    ).show()</code></pre>
+
+                    <div class="alert alert-info">
+                        <strong>📊 Why Lazy Evaluation?</strong>
+                        Unlike R which executes each line immediately, PySpark builds an execution plan and only runs it when you call an "action" like <code>show()</code>, <code>count()</code>, or <code>write()</code>. This allows Spark to optimize the entire workflow before execution—critical for performance with large datasets.
+                    </div>
+                </section>
+
+                <section id="importing">
+                    <h2>Importing Data</h2>
+
+                    <h3>Reading Large CSV Files</h3>
+                    <pre><code># Basic CSV import
+df = spark.read.csv(
+    "surveillance_data.csv",
+    header=True,
+    inferSchema=True  # Automatically detect data types
+)
+
+# With explicit schema (faster for large files)
+from pyspark.sql.types import StructType, StructField, StringType, IntegerType, DateType
+
+schema = StructType([
+    StructField("patient_id", StringType(), False),
+    StructField("diagnosis_date", DateType(), True),
+    StructField("age", IntegerType(), True),
+    StructField("sex", StringType(), True),
+    StructField("disease_code", StringType(), True)
+])
+
+df = spark.read.csv(
+    "surveillance_data.csv",
+    header=True,
+    schema=schema
+)</code></pre>
+
+                    <h3>Reading Multiple Files</h3>
+                    <pre><code># Read all CSV files in a directory
+df = spark.read.csv("data/year_2023/*.csv", header=True)
+
+# Read with wildcard pattern
+df = spark.read.csv("data/surveillance_202*.csv", header=True)
+
+# Combine multiple directories
+df = spark.read.csv(["data/2022/", "data/2023/"], header=True)</code></pre>
+
+                    <h3>Working with Parquet</h3>
+                    <p>Parquet is the preferred format for big data—it's columnar, compressed, and preserves schema:</p>
+                    <pre><code># Read Parquet
+df = spark.read.parquet("ehr_data.parquet")
+
+# Write to Parquet (saves space and loads faster)
+df.write.parquet("processed_data.parquet", mode="overwrite")
+
+# Partitioned writes (organizes by column values)
+df.write.partitionBy("year", "disease") \
+    .parquet("surveillance_partitioned.parquet")</code></pre>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ File Format Recommendations</strong>
+                        <ul>
+                            <li><strong>CSV</strong>: Use for initial data receipt and sharing with non-technical users</li>
+                            <li><strong>Parquet</strong>: Use for all intermediate and final analytical datasets (10-100x smaller, 100x faster)</li>
+                            <li><strong>Delta Lake</strong>: Use for frequently updated tables requiring ACID transactions</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section id="cleaning">
+                    <h2>Data Cleaning</h2>
+
+                    <h3>Handling Missing Values</h3>
+                    <pre><code>from pyspark.sql.functions import col, when, isnan, isnull
+
+# Count missing values per column
+df.select([
+    count(when(col(c).isNull(), c)).alias(c)
+    for c in df.columns
+]).show()
+
+# Drop rows with any null values
+df_clean = df.dropna()
+
+# Drop rows with nulls in specific columns
+df_clean = df.dropna(subset=["patient_id", "diagnosis_date"])
+
+# Fill missing values
+df_filled = df.fillna({
+    "age": 0,
+    "sex": "Unknown",
+    "bmi": df.agg({"bmi": "mean"}).collect()[0][0]  # Fill with mean
+})</code></pre>
+
+                    <h3>Detecting and Removing Duplicates</h3>
+                    <pre><code># Count total duplicates
+print(f"Total rows: {df.count()}")
+print(f"Distinct rows: {df.distinct().count()}")
+
+# Remove exact duplicates
+df_dedup = df.dropDuplicates()
+
+# Remove duplicates based on specific columns (e.g., patient-date)
+df_dedup = df.dropDuplicates(["patient_id", "visit_date"])</code></pre>
+
+                    <h3>Data Type Conversion</h3>
+                    <pre><code>from pyspark.sql.functions import to_date, to_timestamp
+from pyspark.sql.types import IntegerType, DoubleType
+
+# Convert string to date
+df = df.withColumn("diagnosis_date", 
+                   to_date(col("diagnosis_date"), "yyyy-MM-dd"))
+
+# Convert string to integer
+df = df.withColumn("age", col("age").cast(IntegerType()))
+
+# Convert string to numeric (handles non-numeric as null)
+df = df.withColumn("lab_value", col("lab_value").cast(DoubleType()))</code></pre>
+
+                    <h3>String Cleaning</h3>
+                    <pre><code>from pyspark.sql.functions import trim, upper, lower, regexp_replace
+
+# Trim whitespace
+df = df.withColumn("disease", trim(col("disease")))
+
+# Standardize case
+df = df.withColumn("disease", upper(col("disease")))
+
+# Remove special characters
+df = df.withColumn("patient_id",
+                   regexp_replace(col("patient_id"), "[^0-9]", ""))
+
+# Replace values
+df = df.withColumn("sex",
+    when(col("sex").isin("M", "Male", "male"), "Male")
+    .when(col("sex").isin("F", "Female", "female"), "Female")
+    .otherwise("Unknown")
+)</code></pre>
+
+                    <h3>Outlier Detection</h3>
+                    <pre><code>from pyspark.sql.functions import percentile_approx
+
+# Calculate quartiles for outlier detection
+quantiles = df.approxQuantile("age", [0.25, 0.75], 0.01)
+q1, q3 = quantiles[0], quantiles[1]
+iqr = q3 - q1
+
+# Flag outliers (values outside 1.5*IQR)
+df = df.withColumn("age_outlier",
+    when((col("age") < (q1 - 1.5 * iqr)) | 
+         (col("age") > (q3 + 1.5 * iqr)), True)
+    .otherwise(False)
+)
+
+# Count outliers
+df.filter(col("age_outlier") == True).count()</code></pre>
+                </section>
+
+                <section id="descriptive">
+                    <h2>Descriptive Statistics</h2>
+
+                    <h3>Summary Statistics</h3>
+                    <pre><code># Quick summary of numeric columns
+df.describe().show()
+
+# Specific statistics
+from pyspark.sql.functions import mean, stddev, min, max, count
+
+df.select([
+    count("patient_id").alias("n"),
+    mean("age").alias("mean_age"),
+    stddev("age").alias("sd_age"),
+    min("age").alias("min_age"),
+    max("age").alias("max_age")
+]).show()</code></pre>
+
+                    <h3>Frequency Tables</h3>
+                    <pre><code># One-way frequency table
+df.groupBy("disease").count().orderBy("count", ascending=False).show()
+
+# Two-way frequency table
+df.groupBy("disease", "outcome") \
+    .count() \
+    .orderBy("disease", "outcome") \
+    .show()
+
+# With proportions
+from pyspark.sql.window import Window
+
+total = df.count()
+df.groupBy("disease") \
+    .agg(count("*").alias("n")) \
+    .withColumn("proportion", col("n") / total) \
+    .withColumn("percentage", col("proportion") * 100) \
+    .show()</code></pre>
+
+                    <h3>Crosstabulation</h3>
+                    <pre><code># Create contingency table
+df.crosstab("exposure", "outcome").show()
+
+# Chi-square test approximation (requires pivot)
+contingency = df.groupBy("exposure") \
+    .pivot("outcome") \
+    .count() \
+    .fillna(0)
+
+contingency.show()</code></pre>
+
+                    <div class="alert alert-tip">
+                        <strong>💡 Epidemiological Tip</strong>
+                        Always check your denominator! Use <code>count()</code> carefully—it counts non-null values. For person-time denominators, sum the follow-up time explicitly.
+                    </div>
+                </section>
+
+                <section id="rates">
+                    <h2>Calculating Rates & Ratios</h2>
+
+                    <h3>Incidence Rate</h3>
+                    <pre><code># Calculate incidence rate (per 100,000 person-years)
+from pyspark.sql.functions import sum
+
+rates = df.groupBy("disease") \
+    .agg(
+        sum("cases").alias("total_cases"),
+        sum("person_years").alias("total_person_years")
+    ) \
+    .withColumn("incidence_rate",
+        (col("total_cases") / col("total_person_years")) * 100000
+    )
+
+rates.show()</code></pre>
+
+                    <h3>Age-Standardized Rates</h3>
+                    <pre><code># Direct standardization
+# Join with standard population
+standard_pop = spark.read.csv("standard_population.csv", header=True)
+
+age_specific = df.groupBy("age_group") \
+    .agg(
+        sum("cases").alias("cases"),
+        sum("population").alias("pop")
+    ) \
+    .withColumn("rate", col("cases") / col("pop") * 100000)
+
+# Join with standard population and calculate weighted rate
+standardized = age_specific.join(standard_pop, "age_group") \
+    .withColumn("weighted_cases", col("rate") * col("standard_pop")) \
+    .agg(sum("weighted_cases").alias("age_standardized_rate"))
+
+standardized.show()</code></pre>
+
+                    <h3>Risk Ratios and Odds Ratios</h3>
+                    <pre><code># Calculate 2x2 table
+exposed_cases = df.filter((col("exposed") == 1) & (col("case") == 1)).count()
+exposed_controls = df.filter((col("exposed") == 1) & (col("case") == 0)).count()
+unexposed_cases = df.filter((col("exposed") == 0) & (col("case") == 1)).count()
+unexposed_controls = df.filter((col("exposed") == 0) & (col("case") == 0)).count()
+
+# Risk Ratio
+risk_exposed = exposed_cases / (exposed_cases + exposed_controls)
+risk_unexposed = unexposed_cases / (unexposed_cases + unexposed_controls)
+risk_ratio = risk_exposed / risk_unexposed
+
+# Odds Ratio
+or_value = (exposed_cases * unexposed_controls) / (exposed_controls * unexposed_cases)
+
+print(f"Risk Ratio: {risk_ratio:.2f}")
+print(f"Odds Ratio: {or_value:.2f}")</code></pre>
+
+                    <h3>Confidence Intervals</h3>
+                    <pre><code>import math
+
+# 95% CI for proportions (Wald method)
+def proportion_ci(cases, total, alpha=0.05):
+    p = cases / total
+    se = math.sqrt(p * (1 - p) / total)
+    z = 1.96  # 95% CI
+    ci_lower = p - z * se
+    ci_upper = p + z * se
+    return (ci_lower, ci_upper)
+
+# Example usage
+n_cases = 45
+n_total = 1000
+ci = proportion_ci(n_cases, n_total)
+print(f"Proportion: {n_cases/n_total:.3f} (95% CI: {ci[0]:.3f}-{ci[1]:.3f})")</code></pre>
+                </section>
+
+                <section id="regression">
+                    <h2>Regression Models</h2>
+
+                    <h3>Logistic Regression</h3>
+                    <pre><code>from pyspark.ml.feature import VectorAssembler
+from pyspark.ml.classification import LogisticRegression
+
+# Prepare features
+assembler = VectorAssembler(
+    inputCols=["age", "bmi", "smoking"],
+    outputCol="features"
+)
+
+df_features = assembler.transform(df)
+
+# Fit logistic regression
+lr = LogisticRegression(
+    featuresCol="features",
+    labelCol="disease",
+    maxIter=10,
+    regParam=0.01
+)
+
+model = lr.fit(df_features)
+
+# View coefficients (log odds ratios)
+print("Coefficients:", model.coefficients)
+print("Intercept:", model.intercept)
+
+# Get odds ratios
+import numpy as np
+odds_ratios = np.exp(model.coefficients.toArray())
+print("Odds Ratios:", odds_ratios)</code></pre>
+
+                    <h3>Cox Proportional Hazards (Survival Analysis)</h3>
+                    <pre><code># Note: PySpark doesn't have built-in Cox regression
+# Use MLlib's AFTSurvivalRegression as alternative or integrate with lifelines
+
+from pyspark.ml.regression import AFTSurvivalRegression
+
+# Prepare data with censoring indicator
+aft = AFTSurvivalRegression(
+    featuresCol="features",
+    labelCol="time",
+    censorCol="censored"
+)
+
+model = aft.fit(df_features)
+
+# Show coefficients
+print("Coefficients:", model.coefficients)
+print("Scale:", model.scale)</code></pre>
+
+                    <h3>Stratified Analysis</h3>
+                    <pre><code># Stratify by age group
+from pyspark.sql.window import Window
+
+# Calculate stratum-specific odds ratios
+strata_results = []
+
+for age_group in ["<30", "30-50", "50+"]:</code></pre>
+
+                    <div class="alert alert-warning">
+                        <strong>⚠️ Statistical Modeling Limitations</strong>
+                        PySpark's MLlib focuses on machine learning, not traditional statistical inference. For complex epidemiological models (GEE, mixed effects, competing risks), consider:
+                        <ul>
+                            <li>Using PySpark for data prep, then export to R/Python statsmodels</li>
+                            <li>Using UDFs to call R/Python statistical libraries</li>
+                            <li>Cloud-based solutions like Databricks with integrated R</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section id="optimization">
+                    <h2>Performance Optimization</h2>
+
+                    <h3>Caching</h3>
+                    <pre><code># Cache frequently accessed DataFrames in memory
+df_filtered = df.filter(col("year") == 2023)
+df_filtered.cache()  # or .persist()
+
+# Use the cached DataFrame multiple times
+df_filtered.groupBy("disease").count().show()
+df_filtered.groupBy("age_group").count().show()
+
+# Unpersist when done
+df_filtered.unpersist()</code></pre>
+
+                    <h3>Partitioning</h3>
+                    <pre><code># Repartition for better parallelism
+df_repartitioned = df.repartition(100)  # 100 partitions
+
+# Coalesce to reduce partitions (no shuffle)
+df_coalesced = df.coalesce(10)
+
+# Partition by column for efficient filtering
+df.write.partitionBy("year", "state") \
+    .parquet("surveillance_partitioned")</code></pre>
+
+                    <h3>Broadcast Joins</h3>
+                    <pre><code>from pyspark.sql.functions import broadcast
+
+# For small lookup tables (<100MB), broadcast to all workers
+small_ref_table = spark.read.csv("icd_codes.csv", header=True)
+
+# Broadcast join (much faster than shuffle join)
+result = df.join(broadcast(small_ref_table), "disease_code")</code></pre>
+
+                    <h3>Query Optimization Tips</h3>
+                    <div class="alert alert-tip">
+                        <strong>💡 Performance Best Practices</strong>
+                        <ul>
+                            <li><strong>Filter early</strong>: Apply filters before joins and aggregations</li>
+                            <li><strong>Select only needed columns</strong>: Don't use <code>select("*")</code></li>
+                            <li><strong>Use Parquet</strong>: Columnar format is 10-100x faster than CSV</li>
+                            <li><strong>Avoid collect()</strong>: Don't bring entire large DataFrames to driver</li>
+                            <li><strong>Monitor Spark UI</strong>: Check localhost:4040 for execution plans</li>
+                            <li><strong>Partition intelligently</strong>: Too few = slow, too many = overhead</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <section id="outbreak">
+                    <h2>Case Study: Outbreak Investigation</h2>
+
+                    <h3>Scenario</h3>
+                    <p>A foodborne illness outbreak has been reported. You have a dataset with 50,000 records from multiple restaurants, including customer demographics, food items consumed, and illness status.</p>
+
+                    <h3>Data Loading and Initial Exploration</h3>
+                    <pre><code># Load outbreak data
+outbreak_df = spark.read.csv("outbreak_data.csv", header=True, inferSchema=True)
+
+# Check data quality
+print(f"Total records: {outbreak_df.count()}")
+outbreak_df.printSchema()
+
+# Initial summary
+outbreak_df.groupBy("ill").count().show()
+outbreak_df.groupBy("restaurant").count().show()</code></pre>
+
+                    <h3>Descriptive Epidemiology: Person, Place, Time</h3>
+                    <pre><code>from pyspark.sql.functions import to_date, hour, dayofweek
+
+# Parse datetime
+outbreak_df = outbreak_df.withColumn(
+    "meal_datetime", 
+    to_timestamp("meal_datetime", "yyyy-MM-dd HH:mm:ss")
+)
+
+# Time distribution (epidemic curve)
+epi_curve = outbreak_df.filter(col("ill") == 1) \
+    .groupBy(to_date("meal_datetime").alias("date")) \
+    .count() \
+    .orderBy("date")
+
+epi_curve.show()
+
+# Person characteristics
+outbreak_df.filter(col("ill") == 1) \
+    .groupBy("age_group", "sex") \
+    .count() \
+    .orderBy("age_group", "sex") \
+    .show()
+
+# Place distribution
+outbreak_df.filter(col("ill") == 1) \
+    .groupBy("restaurant", "city") \
+    .count() \
+    .orderBy(desc("count")) \
+    .show(10)</code></pre>
+
+                    <h3>Analytical Epidemiology: Food-Specific Attack Rates</h3>
+                    <pre><code># Calculate attack rates for each food item
+food_items = ["chicken", "salad", "pasta", "seafood", "dessert"]
+
+attack_rates = []
+
+for food in food_items:
+    # Those who ate the food
+    ate_ill = outbreak_df.filter(
+        (col(food) == 1) & (col("ill") == 1)
+    ).count()
+    ate_total = outbreak_df.filter(col(food) == 1).count()
+    
+    # Those who didn't eat the food
+    not_ate_ill = outbreak_df.filter(
+        (col(food) == 0) & (col("ill") == 1)
+    ).count()
+    not_ate_total = outbreak_df.filter(col(food) == 0).count()
+    
+    # Calculate attack rates
+    ar_ate = ate_ill / ate_total if ate_total > 0 else 0
+    ar_not_ate = not_ate_ill / not_ate_total if not_ate_total > 0 else 0
+    
+    # Risk ratio
+    rr = ar_ate / ar_not_ate if ar_not_ate > 0 else float('inf')
+    
+    attack_rates.append({
+        "food": food,
+        "ate_ill": ate_ill,
+        "ate_total": ate_total,
+        "ar_ate": ar_ate,
+        "ar_not_ate": ar_not_ate,
+        "risk_ratio": rr
+    })
+
+# Convert to DataFrame and display
+ar_df = spark.createDataFrame(attack_rates)
+ar_df.orderBy(desc("risk_ratio")).show()</code></pre>
+
+                    <h3>Incubation Period Analysis</h3>
+                    <pre><code># Calculate time from exposure to illness onset
+from pyspark.sql.functions import unix_timestamp
+
+outbreak_df = outbreak_df.withColumn(
+    "incubation_hours",
+    (unix_timestamp("symptom_onset") - unix_timestamp("meal_datetime")) / 3600
+)
+
+# Incubation period distribution
+outbreak_df.filter(col("ill") == 1) \
+    .select(
+        mean("incubation_hours").alias("mean_hours"),
+        expr("percentile_approx(incubation_hours, 0.5)").alias("median_hours"),
+        min("incubation_hours").alias("min_hours"),
+        max("incubation_hours").alias("max_hours")
+    ).show()
+
+# This helps identify the pathogen (e.g., Salmonella: 6-72h, Staph aureus: 1-6h)</code></pre>
+
+                    <div class="alert alert-info">
+                        <strong>📊 Key Findings</strong>
+                        In this outbreak investigation, PySpark enabled rapid analysis of 50,000 records to identify:
+                        <ul>
+                            <li>The implicated food item (highest risk ratio)</li>
+                            <li>Time distribution suggesting point-source outbreak</li>
+                            <li>Incubation period consistent with specific pathogen</li>
+                            <li>Geographic clustering to specific restaurant locations</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <div class="nav-buttons">
+                    <a href="#" class="nav-button">← Previous: Installation</a>
+                    <a href="#importing" class="nav-button next">Next: Data Management →</a>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <footer class="footer">
+        <p>&copy; 2026 The Epidemiologist PySpark Handbook | Open Source Project</p>
+        <p>Contribute on <a href="#">GitHub</a> | Report Issues | <a href="#">Documentation</a></p>
+        <p style="margin-top: 1rem; font-size: 0.9rem; opacity: 0.8;">
+            Inspired by the <a href="https://epirhandbook.com">Epi R Handbook</a> | Built for the epidemiology community
+        </p>
+    </footer>
+
+    <script>
+        // Add copy buttons to all code blocks
+        document.addEventListener('DOMContentLoaded', function() {
+            const preElements = document.querySelectorAll('pre');
+            
+            preElements.forEach((pre, index) => {
+                // Create header with copy button
+                const header = document.createElement('div');
+                header.className = 'code-header';
+                
+                const copyButton = document.createElement('button');
+                copyButton.className = 'copy-button';
+                copyButton.innerHTML = `
+                    <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                    </svg>
+                    Copy to Clipboard
+                `;
+                
+                header.appendChild(copyButton);
+                
+                // Insert header into pre element
+                pre.insertBefore(header, pre.firstChild);
+                
+                // Add copy functionality
+                copyButton.addEventListener('click', function() {
+                    const code = pre.querySelector('code');
+                    const text = code ? code.textContent : pre.textContent;
+                    
+                    // Remove the copy button text from copied content
+                    const cleanText = text.replace('Copy to Clipboard', '').replace('Copied!', '').trim();
+                    
+                    navigator.clipboard.writeText(cleanText).then(function() {
+                        // Success feedback
+                        copyButton.innerHTML = `
+                            <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                            </svg>
+                            Copied!
+                        `;
+                        copyButton.classList.add('copied');
+                        
+                        // Reset after 2 seconds
+                        setTimeout(function() {
+                            copyButton.innerHTML = `
+                                <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                                Copy to Clipboard
+                            `;
+                            copyButton.classList.remove('copied');
+                        }, 2000);
+                    }).catch(function(err) {
+                        console.error('Failed to copy:', err);
+                        copyButton.textContent = 'Failed to copy';
+                        setTimeout(function() {
+                            copyButton.innerHTML = `
+                                <svg class="copy-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path>
+                                </svg>
+                                Copy to Clipboard
+                            `;
+                        }, 2000);
+                    });
+                });
+            });
+        });
+
+        // Smooth scrolling for navigation
+        document.querySelectorAll('.sidebar a').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    
+                    // Update active state
+                    document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
+                    this.classList.add('active');
+                }
+            });
+        });
+
+        // Add intersection observer for automatic active state updates
+        const sections = document.querySelectorAll('section');
+        const navLinks = document.querySelectorAll('.sidebar a');
+
+        const observerOptions = {
+            root: null,
+            rootMargin: '-20% 0px -70% 0px',
+            threshold: 0
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    const id = entry.target.getAttribute('id');
+                    navLinks.forEach(link => {
+                        link.classList.remove('active');
+                        if (link.getAttribute('href') === `#${id}`) {
+                            link.classList.add('active');
+                        }
+                    });
+                }
+            });
+        }, observerOptions);
+
+        sections.forEach(section => observer.observe(section));
+    </script>
+</body>
+</html>
